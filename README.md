@@ -27,14 +27,40 @@ npm run dev
 
 Then open http://localhost:5173.
 
-## Where the real backend plugs in
+## Make it real (live SMS / calls)
 
-Everything the teammate builds slots into **`src/services/api.js`**:
+A minimal real backend lives in [`/server`](server) — it calls the Dial API so the
+app can provision a real number, send a real SMS, and place a real call.
 
-- `provisionNumber()` → Dial `POST /api/v1/numbers` (or return one shared helper number).
-- `nextTurn()` → driven by Dial `POST /api/v1/calls` (outbound instruction + language) + the live transcript, with Gemini translating between the user’s language and the local one.
+1. Get a Dial API key (free, $5 credit, no card) at https://getdial.ai
+2. Start the backend:
+   ```bash
+   cd server
+   cp .env.example .env        # then put your key in DIAL_API_KEY
+   npm install
+   npm start                   # http://localhost:8787
+   ```
+3. Point the frontend at it:
+   ```bash
+   cp .env.example .env        # in the project root; sets VITE_API_BASE=http://localhost:8787
+   npm run dev                 # restart vite so it picks up .env
+   ```
 
-The component code never changes — only that file.
+Now **creating a number returns a real Dial number** and the **welcome SMS really
+texts your phone**. With no backend / no `VITE_API_BASE`, the app falls back to the
+built-in mock so the UI always runs.
+
+### The seam
+The frontend only ever talks to **`src/services/api.js`** (`provisionNumber`,
+`sendWelcomeSms`, `placeCall`, `nextTurn`). It calls the backend when `VITE_API_BASE`
+is set and mocks otherwise — component code never changes. The piece still stubbed is
+the live call relay (`nextTurn` → Dial `POST /calls` transcript + Gemini translation).
+
+### Backend endpoints (`/server`)
+- `POST /api/provision` → shared helper number (Dial `POST /numbers`, cached)
+- `POST /api/welcome-sms { phone }` → texts the user (Dial `POST /messages`)
+- `POST /api/call { to, outboundInstruction, language }` → Dial `POST /calls`
+- `GET /api/call/:id` → call status + transcript
 
 ## Screens
 

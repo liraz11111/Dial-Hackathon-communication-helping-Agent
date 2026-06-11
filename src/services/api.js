@@ -17,14 +17,28 @@ import { getScenario, localized } from '../lib/scripts.js'
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 
+// When VITE_API_BASE is set (frontend .env), call the REAL Dial backend in /server.
+// Otherwise everything below falls back to the mock so the UI still runs standalone.
+const API = (import.meta.env && import.meta.env.VITE_API_BASE) || ''
+export const isLive = !!API
+
 export const TIMING = {
   connect: 1600, // ring -> connected
   relay: 1500, // user reply -> agent relays -> other side responds
 }
 
 // The shared "helper" number everyone saves and texts.
-// TODO(real): provision/return from Dial.
 export async function provisionNumber() {
+  if (API) {
+    try {
+      const r = await fetch(`${API}/api/provision`, { method: 'POST' })
+      const d = await r.json()
+      if (d.ok && d.number) return d.number
+      console.warn('provision via backend failed:', d.error || d)
+    } catch (e) {
+      console.warn('backend unreachable — using mock number', e)
+    }
+  }
   await wait(700)
   return '+1 (415) 555‑0142'
 }
@@ -51,11 +65,34 @@ export async function nextTurn({ category, turnIndex, userLang, agentLang = 'en'
   }
 }
 
-// Mock: text the user's own phone (used when they sign up on a computer).
-// TODO(real): POST https://getdial.ai/api/v1/messages from the shared helper number.
+// Text the user's own phone (the welcome message, when they sign up on a computer).
 export async function sendWelcomeSms(toPhone) {
+  if (API) {
+    try {
+      const r = await fetch(`${API}/api/welcome-sms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: toPhone }),
+      })
+      const d = await r.json()
+      return { ...d, live: true }
+    } catch (e) {
+      console.warn('welcome-sms backend unreachable — mocking', e)
+    }
+  }
   await wait(900)
-  return { ok: true, to: toPhone, body: 'Hi 👋 do you need help making a call? Just reply here.' }
+  return { ok: true, live: false, to: toPhone }
+}
+
+// Place a real outbound call via the backend (used once you wire calls to Dial).
+export async function placeCall({ to, outboundInstruction, language }) {
+  if (!API) return { ok: false, error: 'No backend configured (set VITE_API_BASE).' }
+  const r = await fetch(`${API}/api/call`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ to, outboundInstruction, language }),
+  })
+  return r.json()
 }
 
 export { wait }
