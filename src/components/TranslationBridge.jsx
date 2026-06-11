@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import { motion } from 'framer-motion'
 import Phone3D from './three/Phone3D.jsx'
 import SplitFlap from './SplitFlap.jsx'
+import LanguagePicker from './LanguagePicker.jsx'
 import { Icon } from './ui/Icons.jsx'
 import { PHRASES, translatePhrase } from '../lib/phrases.js'
 import { listen, speak, micSupported } from '../lib/speech.js'
@@ -168,11 +169,15 @@ export default function TranslationBridge() {
   const [flapTrigger, setFlapTrigger] = useState(0)
   const [flow, setFlow] = useState(0)
   const [listening, setListening] = useState(false)
+  const [micMsg, setMicMsg] = useState('')
   const recRef = useRef(null)
+  const pauseUntil = useRef(0)
+  const autoIdx = useRef(0)
 
   const send = (text) => {
     const value = (text ?? source).trim()
     if (!value) return
+    pauseUntil.current = performance.now() + 7000
     const translated = translatePhrase(value, fromLang, toLang)
     setSource(value)
     setFlapText(translated)
@@ -181,12 +186,38 @@ export default function TranslationBridge() {
     speak(translated, toLang)
   }
 
+  // Idle auto-demo: keep the board alive by flipping through phrases (no audio)
+  // whenever the user isn't interacting.
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (listening || performance.now() < pauseUntil.current) return
+      autoIdx.current = (autoIdx.current + 1) % PHRASES.length
+      const p = PHRASES[autoIdx.current]
+      const src = p[fromLang] || p.en
+      setSource(src)
+      setFlapText(translatePhrase(src, fromLang, toLang))
+      setFlapTrigger((t) => t + 1)
+      setFlow((f) => f + 1)
+    }, 4200)
+    return () => clearInterval(id)
+  }, [fromLang, toLang, listening])
+
+  // Re-flip the board whenever either language changes, so the toggles visibly work.
+  useEffect(() => {
+    const base = source || PHRASES[autoIdx.current][fromLang] || PHRASES[autoIdx.current].en
+    setFlapText(translatePhrase(base, fromLang, toLang))
+    setFlapTrigger((t) => t + 1)
+    setFlow((f) => f + 1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromLang, toLang])
+
   const toggleMic = () => {
     if (listening) {
       recRef.current?.stop()
       setListening(false)
       return
     }
+    setMicMsg('')
     setListening(true)
     recRef.current = listen(fromLang, {
       onResult: (txt) => setSource(txt),
@@ -194,9 +225,15 @@ export default function TranslationBridge() {
         setListening(false)
         if (final) send(final)
       },
-      onError: () => setListening(false),
+      onError: (err) => {
+        setListening(false)
+        setMicMsg(err === 'not-allowed' ? 'Allow microphone access to speak' : 'Mic unavailable — tap a phrase instead')
+      },
     })
-    if (!recRef.current) setListening(false)
+    if (!recRef.current) {
+      setListening(false)
+      setMicMsg('Voice input needs Chrome or Edge — tap a phrase instead')
+    }
   }
 
   useEffect(() => () => recRef.current?.stop?.(), [])
@@ -248,51 +285,46 @@ export default function TranslationBridge() {
           </motion.div>
         </div>
 
-        {/* controls */}
+        {/* controls — pick your language, then speak or tap a phrase (no in-app typing) */}
         <div className="glass-strong rounded-2xl p-4">
-          <div className="mb-3 grid gap-2 sm:grid-cols-2">
-            <FlagRow value={fromLang} onChange={setFromLang} label="You speak" />
+          <div className="mb-4 grid gap-3 sm:grid-cols-2 sm:items-end">
+            <div>
+              <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-white/45">You speak</div>
+              <LanguagePicker value={fromLang} onChange={setFromLang} up />
+            </div>
             <FlagRow value={toLang} onChange={setToLang} label="They hear" langs={AGENT_LANGS} />
           </div>
 
-          <div className="flex items-end gap-2">
-            <input
-              value={source}
-              onChange={(e) => setSource(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && send()}
-              placeholder="Type or tap the mic…"
-              dir={isRTL(fromLang) ? 'rtl' : 'ltr'}
-              className="flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 outline-none transition focus:border-brand-400 focus:bg-white/10"
-            />
+          <div className="flex flex-wrap items-center justify-center gap-3">
             {micSupported && (
               <button
                 onClick={toggleMic}
-                className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl transition ${
-                  listening ? 'mic-live bg-accent-500 text-white' : 'glass text-white hover:bg-white/10'
+                className={`flex items-center gap-2 rounded-full px-6 py-3 text-[15px] font-bold transition ${
+                  listening
+                    ? 'mic-live bg-accent-500 text-white'
+                    : 'bg-gradient-to-br from-brand-400 to-brand-600 text-ink-900 shadow-glow'
                 }`}
-                title="Speak"
               >
                 <Icon name="phone" className="h-5 w-5" />
+                {listening ? 'Listening…' : 'Tap & speak'}
               </button>
             )}
-            <button
-              onClick={() => send()}
-              className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-ink-900 shadow-glow"
-              title="Send across the bridge"
-            >
-              <Icon name="send" className="h-5 w-5" />
-            </button>
+            <span className="text-sm text-white/45">
+              {micSupported ? 'or tap a phrase below' : 'Tap a phrase to send it across'}
+            </span>
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {PHRASES.slice(0, 4).map((p) => (
+          {micMsg && <div className="mt-2 text-center text-xs text-accent-300">{micMsg}</div>}
+
+          <div className="mt-3 flex flex-wrap justify-center gap-1.5">
+            {PHRASES.map((p) => (
               <button
                 key={p.id}
-                onClick={() => send(p[fromLang])}
-                className="rounded-full glass px-3 py-1.5 text-xs text-white/70 hover:bg-white/10"
+                onClick={() => send(p[fromLang] || p.en)}
+                className="rounded-full glass px-3 py-1.5 text-xs text-white/75 transition hover:bg-white/10"
                 dir={isRTL(fromLang) ? 'rtl' : 'ltr'}
               >
-                {p[fromLang]}
+                {p[fromLang] || p.en}
               </button>
             ))}
           </div>

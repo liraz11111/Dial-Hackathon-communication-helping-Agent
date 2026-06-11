@@ -3,7 +3,7 @@ import { Icon } from './ui/Icons.jsx'
 import { langMeta, searchLanguages } from '../lib/languages.js'
 
 // A searchable language scroller: type to filter, scroll, tap to choose.
-export default function LanguagePicker({ value, onChange, placeholder = 'Search language…' }) {
+export default function LanguagePicker({ value, onChange, placeholder = 'Search language…', up = false }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const ref = useRef(null)
@@ -41,7 +41,7 @@ export default function LanguagePicker({ value, onChange, placeholder = 'Search 
       </button>
 
       {open && (
-        <div className="absolute z-40 mt-2 w-full overflow-hidden rounded-2xl glass-strong p-2 shadow-glass">
+        <div className={`absolute z-40 w-full overflow-hidden rounded-2xl glass-strong p-2 shadow-glass ${up ? 'bottom-full mb-2' : 'mt-2'}`}>
           <input
             autoFocus
             value={query}

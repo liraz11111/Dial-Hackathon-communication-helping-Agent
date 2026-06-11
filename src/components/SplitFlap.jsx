@@ -12,7 +12,9 @@ function Cell({ final, index, trigger, pool }) {
     }
     let raf
     const start = performance.now()
-    const settle = 360 + index * 55
+    // slower + clearly visible: each cell flips through several characters,
+    // staggered left-to-right, before settling on its final letter.
+    const settle = 700 + index * 85
     let lastSwap = 0
     const tick = (now) => {
       const t = now - start
@@ -20,7 +22,7 @@ function Cell({ final, index, trigger, pool }) {
         setCh(final)
         return
       }
-      if (now - lastSwap > 45) {
+      if (now - lastSwap > 95) {
         setCh(pool[Math.floor(Math.random() * pool.length)])
         lastSwap = now
       }

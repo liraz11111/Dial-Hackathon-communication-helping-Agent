@@ -20,7 +20,7 @@ export default function Landing() {
   ]
 
   return (
-    <div className="app-bg min-h-screen w-full overflow-x-hidden" dir={rtl ? 'rtl' : 'ltr'}>
+    <div className="min-h-screen w-full overflow-x-hidden" dir={rtl ? 'rtl' : 'ltr'}>
       <header className="relative z-20 mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
         <div className="flex items-center gap-2.5">
           <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 text-ink-900 shadow-glow">

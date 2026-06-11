@@ -56,6 +56,15 @@ function Message({ m, lang }) {
           </div>
         </div>
       )
+    if (m.kind === 'welcome')
+      return (
+        <div className="flex justify-start">
+          <div className="glass max-w-[82%] rounded-2xl rounded-bl-md px-4 py-3">
+            <p className="whitespace-pre-wrap text-[15px] leading-snug text-white">{m.text}</p>
+            <div className="mt-1 text-[10px] text-white/40">{time(m.ts)}</div>
+          </div>
+        </div>
+      )
     return null
   }
 
@@ -128,7 +137,7 @@ function HomePane({ lang, onNewCall }) {
   )
 }
 
-function Thread({ conv, lang }) {
+function Thread({ conv, lang, onNewCall }) {
   const { actions } = useStore()
   const [draft, setDraft] = useState('')
   const scrollRef = useRef(null)
@@ -175,7 +184,12 @@ function Thread({ conv, lang }) {
 
       {/* composer / status */}
       <div className="border-t border-white/10 p-3">
-        {conv.status === 'ended' ? (
+        {conv.status === 'welcome' ? (
+          <Button full variant="primary" onClick={onNewCall}>
+            <Icon name="plus" className="h-5 w-5" />
+            {t('chat.new', lang)}
+          </Button>
+        ) : conv.status === 'ended' ? (
           <div className="flex items-center justify-center gap-2 py-2 text-sm text-white/50">
             <Icon name="check" className="h-4 w-4 text-brand-300" />
             {t('chat.ended', lang)}
@@ -213,7 +227,13 @@ function Thread({ conv, lang }) {
 function ConvListItem({ conv, active, onClick, lang }) {
   const last = conv.messages[conv.messages.length - 1]
   const preview =
-    last?.role === 'them' ? last.text : last?.role === 'user' ? `${t('chat.you', lang)}: ${last.text}` : t('chat.connecting', lang)
+    last?.role === 'them'
+      ? last.text
+      : last?.role === 'user'
+        ? `${t('chat.you', lang)}: ${last.text}`
+        : last?.role === 'agent' && last.text
+          ? last.text
+          : t('chat.connecting', lang)
   return (
     <button
       onClick={onClick}
@@ -282,7 +302,7 @@ export default function Chat() {
               exit={{ opacity: 0 }}
               className="h-full"
             >
-              <Thread conv={active} lang={lang} />
+              <Thread conv={active} lang={lang} onNewCall={() => setSheet(true)} />
             </motion.div>
           ) : (
             <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full">

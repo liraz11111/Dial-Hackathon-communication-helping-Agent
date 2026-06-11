@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react'
 import { provisionNumber, nextTurn, TIMING } from './services/api.js'
 import { CATEGORIES } from './lib/scripts.js'
+import { t } from './lib/languages.js'
 
 const StoreContext = createContext(null)
 const LS_KEY = 'bridgeagent_state_v1'
@@ -61,6 +62,31 @@ export function StoreProvider({ children }) {
   const signUp = useCallback(async ({ phone, language, number, agentLang: a }) => {
     const finalNumber = number || (await provisionNumber())
     setUser({ phone, language, number: finalNumber, name: 'BridgeAgent', agentLang: a || 'en' })
+    const welcome = {
+      id: uid('c'),
+      category: 'other',
+      title: 'BridgeAgent',
+      emoji: '✨',
+      number: finalNumber,
+      contactName: '',
+      language,
+      agentLang: a || 'en',
+      status: 'welcome',
+      turnIndex: 0,
+      awaitingUser: false,
+      relaying: false,
+      createdAt: Date.now(),
+      messages: [
+        {
+          id: uid('m'),
+          ts: Date.now(),
+          role: 'agent',
+          kind: 'welcome',
+          text: `${t('chat.home.hi', language)} ${t('chat.home.body', language)}`,
+        },
+      ],
+    }
+    setConversations((prev) => (prev.length ? prev : [welcome]))
     setActiveId(null)
     setTab('chats')
     setScreen('app')

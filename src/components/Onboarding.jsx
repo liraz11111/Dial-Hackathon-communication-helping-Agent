@@ -50,7 +50,7 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="app-bg grid min-h-screen w-full place-items-center px-5 py-10" dir={rtl ? 'rtl' : 'ltr'}>
+    <div className="grid min-h-screen w-full place-items-center px-5 py-10" dir={rtl ? 'rtl' : 'ltr'}>
       <button
         onClick={() => actions.goScreen('landing')}
         className="fixed left-4 top-4 grid h-10 w-10 place-items-center rounded-xl text-white/60 hover:bg-white/5 hover:text-white"
@@ -146,12 +146,15 @@ export default function Onboarding() {
                 <div className="mb-5 flex items-start gap-3 rounded-2xl border border-brand-400/30 bg-brand-500/10 p-4 text-left">
                   <Icon name="chat" className="mt-0.5 h-5 w-5 shrink-0 text-brand-300" />
                   <div className="text-sm text-brand-50/90">
-                    <p className="font-semibold">📱 Check your phone</p>
+                    <p className="font-semibold">Your helper chat is ready 🎉</p>
                     <p className="mt-0.5 text-white/70">
+                      We started a conversation with your BridgeAgent — open it and make your first call.
+                    </p>
+                    <p className="mt-1.5 text-xs text-white/45">
                       {smsSent ? (
-                        <>We just texted <span dir="ltr">{phone}</span>: “Hi, do you need help making a call?” Open your SMS to start.</>
+                        <>It also texts <span dir="ltr">{phone}</span> through the live phone service, so you can use it without the app.</>
                       ) : (
-                        <>Sending a text to your phone…</>
+                        <>Connecting your number…</>
                       )}
                     </p>
                   </div>

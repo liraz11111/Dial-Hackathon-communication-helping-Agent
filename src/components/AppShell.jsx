@@ -56,7 +56,7 @@ export default function AppShell() {
   const hideBottom = tab === 'chats' && activeId
 
   return (
-    <div className="app-bg flex h-screen w-full flex-col overflow-hidden" dir={rtl ? 'rtl' : 'ltr'}>
+    <div className="flex h-screen w-full flex-col overflow-hidden" dir={rtl ? 'rtl' : 'ltr'}>
       <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-2.5">
         <div className="flex items-center gap-2.5">
           <div className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 text-ink-900 shadow-glow">

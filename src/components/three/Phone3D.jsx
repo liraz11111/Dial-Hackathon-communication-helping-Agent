@@ -1,61 +1,55 @@
 import { RoundedBox } from '@react-three/drei'
 
-// A premium phone built from primitives — glossy physical material so it catches
-// the environment reflections set up by the parent scene. Reusable mesh group.
+// A premium phone: titanium-ish metal frame + dark glossy glass screen that
+// mirrors the scene environment (the accent shows as glow, not a flat fill).
 export default function Phone3D({ position = [0, 0, 0], rotation = [0, 0, 0], scale = 1, accent = '#23b89c' }) {
   return (
     <group position={position} rotation={rotation} scale={scale}>
-      {/* metal body */}
-      <RoundedBox args={[2.1, 4.25, 0.33]} radius={0.3} smoothness={8} castShadow receiveShadow>
-        <meshPhysicalMaterial
-          color="#0a0f1f"
-          metalness={1}
-          roughness={0.22}
-          clearcoat={1}
-          clearcoatRoughness={0.18}
-          envMapIntensity={1.6}
-        />
+      {/* metal frame */}
+      <RoundedBox args={[2.08, 4.24, 0.34]} radius={0.36} smoothness={10}>
+        <meshPhysicalMaterial color="#10162a" metalness={1} roughness={0.34} clearcoat={1} clearcoatRoughness={0.28} envMapIntensity={1.5} />
       </RoundedBox>
 
-      {/* glossy screen */}
-      <RoundedBox args={[1.82, 3.7, 0.05]} radius={0.22} smoothness={8} position={[0, 0.04, 0.17]}>
+      {/* dark glossy glass screen (reflects the environment) */}
+      <RoundedBox args={[1.82, 3.78, 0.05]} radius={0.3} smoothness={10} position={[0, 0, 0.17]}>
         <meshPhysicalMaterial
-          color="#04201b"
+          color="#04060e"
           emissive={accent}
-          emissiveIntensity={0.55}
-          metalness={0.4}
-          roughness={0.12}
+          emissiveIntensity={0.12}
+          metalness={0.6}
+          roughness={0.06}
           clearcoat={1}
-          clearcoatRoughness={0.06}
+          clearcoatRoughness={0.04}
+          envMapIntensity={2.1}
+          reflectivity={1}
         />
       </RoundedBox>
 
-      {/* chat bubbles on screen */}
-      <RoundedBox args={[1.0, 0.4, 0.03]} radius={0.16} smoothness={5} position={[-0.32, 1.0, 0.215]}>
-        <meshStandardMaterial color="#a5b4fc" emissive="#6366f1" emissiveIntensity={0.5} roughness={0.5} />
-      </RoundedBox>
-      <RoundedBox args={[1.12, 0.4, 0.03]} radius={0.16} smoothness={5} position={[0.28, 0.32, 0.215]}>
-        <meshStandardMaterial color="#9fe6d8" emissive={accent} emissiveIntensity={0.55} roughness={0.5} />
-      </RoundedBox>
-      <RoundedBox args={[0.82, 0.38, 0.03]} radius={0.15} smoothness={5} position={[-0.42, -0.34, 0.215]}>
-        <meshStandardMaterial color="#ffd0c4" emissive="#ff7a5c" emissiveIntensity={0.5} roughness={0.5} />
+      {/* dynamic-island pill */}
+      <RoundedBox args={[0.52, 0.13, 0.02]} radius={0.06} smoothness={5} position={[0, 1.62, 0.205]}>
+        <meshStandardMaterial color="#05070f" metalness={0.8} roughness={0.3} />
       </RoundedBox>
 
-      {/* camera dot */}
-      <mesh position={[0, 1.82, 0.19]}>
-        <circleGeometry args={[0.05, 24]} />
-        <meshStandardMaterial color="#05070f" metalness={1} roughness={0.2} />
+      {/* refined chat bubbles (subtle glass + low glow) */}
+      <RoundedBox args={[0.92, 0.34, 0.03]} radius={0.16} smoothness={6} position={[-0.34, 0.66, 0.205]}>
+        <meshPhysicalMaterial color="#aeb6e8" emissive="#6366f1" emissiveIntensity={0.28} roughness={0.35} clearcoat={0.6} transmission={0.15} />
+      </RoundedBox>
+      <RoundedBox args={[1.0, 0.34, 0.03]} radius={0.16} smoothness={6} position={[0.28, 0.02, 0.205]}>
+        <meshPhysicalMaterial color="#bdeee4" emissive={accent} emissiveIntensity={0.32} roughness={0.35} clearcoat={0.6} transmission={0.15} />
+      </RoundedBox>
+      <RoundedBox args={[0.72, 0.3, 0.03]} radius={0.14} smoothness={6} position={[-0.44, -0.6, 0.205]}>
+        <meshPhysicalMaterial color="#f0d4cb" emissive="#ff7a5c" emissiveIntensity={0.26} roughness={0.4} clearcoat={0.6} transmission={0.15} />
+      </RoundedBox>
+
+      {/* glowing call button */}
+      <mesh position={[0, -1.46, 0.2]}>
+        <circleGeometry args={[0.32, 48]} />
+        <meshStandardMaterial color={accent} emissive={accent} emissiveIntensity={1.1} toneMapped={false} />
       </mesh>
 
-      {/* call button */}
-      <mesh position={[0, -1.5, 0.2]}>
-        <circleGeometry args={[0.33, 48]} />
-        <meshStandardMaterial color="#ff7a5c" emissive="#ff7a5c" emissiveIntensity={1} />
-      </mesh>
-
-      {/* home bar */}
-      <RoundedBox args={[0.6, 0.06, 0.02]} radius={0.03} smoothness={3} position={[0, -1.95, 0.205]}>
-        <meshStandardMaterial color="#ffffff" transparent opacity={0.5} />
+      {/* home indicator */}
+      <RoundedBox args={[0.58, 0.05, 0.02]} radius={0.025} smoothness={3} position={[0, -1.92, 0.205]}>
+        <meshStandardMaterial color="#ffffff" transparent opacity={0.4} />
       </RoundedBox>
     </group>
   )
