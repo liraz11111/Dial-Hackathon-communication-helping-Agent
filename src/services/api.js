@@ -29,24 +29,33 @@ export async function provisionNumber() {
   return '+1 (415) 555‑0142'
 }
 
-// Returns the next thing the OTHER party says, already translated for the user.
-// TODO(real): this comes from the live Dial call transcript + Gemini translation.
-export async function nextTurn({ category, turnIndex, language }) {
+// Returns the next thing the OTHER party says. The agent speaks the LOCAL
+// language on the call (agentLang = English or Hebrew only) and we relay it
+// translated into the user's own language (userLang).
+// TODO(real): comes from the live Dial call transcript + Gemini translation.
+export async function nextTurn({ category, turnIndex, userLang, agentLang = 'en' }) {
   await wait(TIMING.relay)
   const scenario = getScenario(category)
   const turn = scenario.turns[turnIndex]
 
   if (!turn) {
-    return { done: true, summary: localized(scenario.summary, language) }
+    return { done: true, summary: localized(scenario.summary, userLang) }
   }
 
   return {
     done: !!turn.end,
-    originalLang: scenario.localLang,
-    original: localized(turn, scenario.localLang),
-    translated: localized(turn, language),
-    summary: turn.end ? localized(scenario.summary, language) : null,
+    originalLang: agentLang,
+    original: localized(turn, agentLang),
+    translated: localized(turn, userLang),
+    summary: turn.end ? localized(scenario.summary, userLang) : null,
   }
+}
+
+// Mock: text the user's own phone (used when they sign up on a computer).
+// TODO(real): POST https://getdial.ai/api/v1/messages from the shared helper number.
+export async function sendWelcomeSms(toPhone) {
+  await wait(900)
+  return { ok: true, to: toPhone, body: 'Hi 👋 do you need help making a call? Just reply here.' }
 }
 
 export { wait }

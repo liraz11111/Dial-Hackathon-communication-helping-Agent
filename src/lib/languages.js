@@ -18,6 +18,21 @@ export const LANGUAGES = [
 export const langMeta = (code) => LANGUAGES.find((l) => l.code === code) || LANGUAGES[1]
 export const isRTL = (code) => !!langMeta(code).rtl
 
+// The agent can only speak these on the call (Dial voice support).
+export const AGENT_LANGS = ['en', 'he']
+
+// Fuzzy search of the language list (by native name, English name, or code).
+export function searchLanguages(query) {
+  const q = (query || '').trim().toLowerCase()
+  if (!q) return LANGUAGES
+  return LANGUAGES.filter(
+    (l) =>
+      l.name.toLowerCase().includes(q) ||
+      l.native.toLowerCase().includes(q) ||
+      l.code.includes(q),
+  )
+}
+
 // UI strings. Fully populated for en / es / he; other languages fall back to English.
 const STRINGS = {
   'app.name': { en: 'BridgeAgent', es: 'BridgeAgent', he: 'BridgeAgent' },
@@ -87,7 +102,13 @@ const STRINGS = {
   'hist.search': { en: 'Search calls…', es: 'Buscar llamadas…', he: 'חיפוש שיחות…' },
 
   'set.title': { en: 'Settings', es: 'Ajustes', he: 'הגדרות' },
-  'set.lang': { en: 'My language', es: 'Mi idioma', he: 'השפה שלי' },
+  'set.lang': { en: 'My language (what I speak)', es: 'Mi idioma (lo que hablo)', he: 'השפה שלי (מה שאני מדבר)' },
+  'set.agent': { en: 'Agent speaks on the call', es: 'El agente habla en la llamada', he: 'הסוכן מדבר בשיחה' },
+  'set.agentNote': {
+    en: 'The language the agent uses to talk to the other side.',
+    es: 'El idioma que el agente usa para hablar con la otra parte.',
+    he: 'השפה שבה הסוכן מדבר עם הצד השני.',
+  },
   'set.number': { en: 'My helper number', es: 'Mi número de ayuda', he: 'מספר העזרה שלי' },
   'set.contacts': { en: 'Saved contacts', es: 'Contactos guardados', he: 'אנשי קשר שמורים' },
   'set.save': { en: 'Save BridgeAgent to contacts', es: 'Guardar BridgeAgent en contactos', he: 'שמור את BridgeAgent באנשי קשר' },

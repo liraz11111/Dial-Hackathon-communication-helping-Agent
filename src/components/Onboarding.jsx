@@ -1,11 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Button from './ui/Button.jsx'
 import { Icon } from './ui/Icons.jsx'
+import LanguagePicker from './LanguagePicker.jsx'
 import { useStore } from '../store.jsx'
-import { provisionNumber } from '../services/api.js'
+import { provisionNumber, sendWelcomeSms } from '../services/api.js'
 import { downloadVCard, smsHref } from '../lib/vcard.js'
-import { t, LANGUAGES, isRTL } from '../lib/languages.js'
+import { isMobile } from '../lib/device.js'
+import { t, isRTL } from '../lib/languages.js'
+
+const mobile = isMobile()
 
 export default function Onboarding() {
   const { actions } = useStore()
@@ -14,6 +18,7 @@ export default function Onboarding() {
   const [language, setLanguage] = useState('es')
   const [number, setNumber] = useState('')
   const [busy, setBusy] = useState(false)
+  const [smsSent, setSmsSent] = useState(false)
   const rtl = isRTL(language)
 
   const valid = phone.replace(/[^\d]/g, '').length >= 7
@@ -21,13 +26,28 @@ export default function Onboarding() {
   const onContinue = async () => {
     if (!valid || busy) return
     setBusy(true)
-    const n = await provisionNumber()
-    setNumber(n)
+    const n = await provisionNumber() // the shared helper number (success = truthy)
     setBusy(false)
+    if (!n) return // creation failed -> stay on the form
+    setNumber(n)
     setStep('ready')
   }
 
-  const start = () => actions.signUp({ phone, language, number })
+  // Computer flow: on success, text the user's phone so they can start from there.
+  useEffect(() => {
+    if (step === 'ready' && !mobile && number) {
+      sendWelcomeSms(phone).then(() => setSmsSent(true))
+    }
+  }, [step, number, phone])
+
+  const start = () => actions.signUp({ phone, language, number, agentLang: 'en' })
+
+  // Phone flow: save the contact + open the SMS app + go into the chat (one tap).
+  const phoneFinish = () => {
+    downloadVCard('BridgeAgent', number)
+    actions.signUp({ phone, language, number, agentLang: 'en' })
+    window.location.href = smsHref(number, 'Hi BridgeAgent, I need help making a call.')
+  }
 
   return (
     <div className="app-bg grid min-h-screen w-full place-items-center px-5 py-10" dir={rtl ? 'rtl' : 'ltr'}>
@@ -68,25 +88,9 @@ export default function Onboarding() {
               className="mb-5 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 text-lg outline-none transition focus:border-brand-400 focus:bg-white/10"
             />
 
-            <label className="mb-2 block text-sm font-semibold text-white/80">{t('onb.lang', language)}</label>
-            <div className="mb-6 grid max-h-44 grid-cols-2 gap-2 overflow-y-auto pr-1">
-              {LANGUAGES.map((l) => (
-                <button
-                  key={l.code}
-                  onClick={() => setLanguage(l.code)}
-                  className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left transition ${
-                    language === l.code
-                      ? 'border-brand-400 bg-brand-500/15'
-                      : 'border-white/10 bg-white/5 hover:bg-white/10'
-                  }`}
-                >
-                  <span className="text-lg">{l.flag}</span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold">{l.native}</span>
-                  </span>
-                  {language === l.code && <Icon name="check" className="ms-auto h-4 w-4 text-brand-300" />}
-                </button>
-              ))}
+            <label className="mb-1.5 block text-sm font-semibold text-white/80">{t('onb.lang', language)}</label>
+            <div className="mb-6">
+              <LanguagePicker value={language} onChange={setLanguage} />
             </div>
 
             <Button full size="lg" variant="primary" disabled={!valid || busy} onClick={onContinue}>
@@ -121,7 +125,6 @@ export default function Onboarding() {
               <Icon name="check" className="h-8 w-8" />
             </motion.div>
             <h1 className="text-2xl font-extrabold">{t('setup.title', language)}</h1>
-            <p className="mx-auto mt-2 max-w-sm text-sm text-white/60">{t('setup.body', language)}</p>
 
             <div className="my-5 rounded-2xl border border-white/10 bg-white/5 p-4">
               <div className="text-xs font-semibold uppercase tracking-wide text-white/40">{t('app.name')}</div>
@@ -130,24 +133,41 @@ export default function Onboarding() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <Button variant="glass" onClick={() => downloadVCard('BridgeAgent', number)}>
-                <Icon name="contact" className="h-5 w-5" />
-                {t('setup.save', language)}
-              </Button>
-              <a
-                href={smsHref(number, 'Hi BridgeAgent, I need help making a call.')}
-                className="no-tap-highlight inline-flex items-center justify-center gap-2 rounded-2xl glass px-5 py-3 text-[15px] font-semibold text-white hover:bg-white/10"
-              >
-                <Icon name="chat" className="h-5 w-5" />
-                {t('setup.sms', language)}
-              </a>
-            </div>
-
-            <Button full size="lg" variant="primary" className="mt-3" onClick={start}>
-              <Icon name="sparkles" className="h-5 w-5" />
-              {t('setup.start', language)}
-            </Button>
+            {mobile ? (
+              <>
+                <p className="mx-auto mb-5 max-w-sm text-sm text-white/60">{t('setup.body', language)}</p>
+                <Button full size="lg" variant="primary" onClick={phoneFinish}>
+                  <Icon name="chat" className="h-5 w-5" />
+                  {t('setup.sms', language)} · {t('setup.save', language)}
+                </Button>
+              </>
+            ) : (
+              <>
+                <div className="mb-5 flex items-start gap-3 rounded-2xl border border-brand-400/30 bg-brand-500/10 p-4 text-left">
+                  <Icon name="chat" className="mt-0.5 h-5 w-5 shrink-0 text-brand-300" />
+                  <div className="text-sm text-brand-50/90">
+                    <p className="font-semibold">📱 Check your phone</p>
+                    <p className="mt-0.5 text-white/70">
+                      {smsSent ? (
+                        <>We just texted <span dir="ltr">{phone}</span>: “Hi, do you need help making a call?” Open your SMS to start.</>
+                      ) : (
+                        <>Sending a text to your phone…</>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button variant="glass" onClick={() => downloadVCard('BridgeAgent', number)}>
+                    <Icon name="contact" className="h-5 w-5" />
+                    {t('setup.save', language)}
+                  </Button>
+                  <Button variant="primary" onClick={start}>
+                    <Icon name="sparkles" className="h-5 w-5" />
+                    {t('setup.start', language)}
+                  </Button>
+                </div>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

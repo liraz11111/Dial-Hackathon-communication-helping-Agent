@@ -37,7 +37,10 @@ export function StoreProvider({ children }) {
     localStorage.setItem(LS_KEY, JSON.stringify({ user, conversations, contacts }))
   }, [user, conversations, contacts])
 
-  const lang = user?.language || 'en'
+  // userLang = the language the USER speaks (full list).
+  // agentLang = the language the AGENT speaks on the call (English or Hebrew only).
+  const userLang = user?.language || 'en'
+  const agentLang = user?.agentLang || 'en'
 
   const updateConv = useCallback((id, fn) => {
     setConversations((prev) => prev.map((c) => (c.id === id ? fn(c) : c)))
@@ -55,15 +58,19 @@ export function StoreProvider({ children }) {
 
   const goScreen = useCallback((s) => setScreen(s), [])
 
-  const signUp = useCallback(async ({ phone, language, number }) => {
+  const signUp = useCallback(async ({ phone, language, number, agentLang: a }) => {
     const finalNumber = number || (await provisionNumber())
-    setUser({ phone, language, number: finalNumber, name: 'BridgeAgent' })
+    setUser({ phone, language, number: finalNumber, name: 'BridgeAgent', agentLang: a || 'en' })
     setActiveId(null)
     setTab('chats')
     setScreen('app')
   }, [])
 
   const setLanguage = useCallback((language) => setUser((u) => (u ? { ...u, language } : u)), [])
+  const setAgentLang = useCallback(
+    (a) => setUser((u) => (u ? { ...u, agentLang: a === 'he' ? 'he' : 'en' } : u)),
+    [],
+  )
 
   const reset = useCallback(() => {
     localStorage.removeItem(LS_KEY)
@@ -82,11 +89,11 @@ export function StoreProvider({ children }) {
     setContacts((prev) => [{ id: uid('k'), ...contact }, ...prev])
   }, [])
 
-  // Deliver the other party's next line (translated), then either await the user or end.
+  // Deliver the other party's next line: spoken in agentLang, translated to userLang.
   const deliverTurn = useCallback(
-    async (id, category, turnIndex, language) => {
+    async (id, category, turnIndex, uLang, aLang) => {
       updateConv(id, (c) => ({ ...c, relaying: true }))
-      const res = await nextTurn({ category, turnIndex, language })
+      const res = await nextTurn({ category, turnIndex, userLang: uLang, agentLang: aLang })
       updateConv(id, (c) => ({ ...c, relaying: false }))
 
       if (res.done && !res.original) {
@@ -130,7 +137,8 @@ export function StoreProvider({ children }) {
         emoji: cat.emoji,
         number: number || '',
         contactName: contactName || '',
-        language: lang,
+        language: userLang,
+        agentLang,
         status: 'connecting',
         turnIndex: 0,
         awaitingUser: false,
@@ -145,12 +153,12 @@ export function StoreProvider({ children }) {
       setTimeout(() => {
         updateConv(id, (c) => ({ ...c, status: 'live' }))
         addMessage(id, { role: 'agent', kind: 'connected', text: '' })
-        deliverTurn(id, category, 0, conv.language)
+        deliverTurn(id, category, 0, conv.language, conv.agentLang)
       }, TIMING.connect)
 
       return id
     },
-    [lang, updateConv, addMessage, deliverTurn],
+    [userLang, agentLang, updateConv, addMessage, deliverTurn],
   )
 
   const userReply = useCallback(
@@ -159,14 +167,15 @@ export function StoreProvider({ children }) {
       if (!conv || conv.status !== 'live' || !conv.awaitingUser || conv.relaying) return
       addMessage(id, { role: 'user', text })
       updateConv(id, (c) => ({ ...c, awaitingUser: false }))
-      deliverTurn(id, conv.category, conv.turnIndex, conv.language)
+      deliverTurn(id, conv.category, conv.turnIndex, conv.language, conv.agentLang)
     },
     [addMessage, updateConv, deliverTurn],
   )
 
   const value = {
     user,
-    lang,
+    lang: userLang,
+    agentLang,
     screen,
     tab,
     conversations,
@@ -177,6 +186,7 @@ export function StoreProvider({ children }) {
       setTab,
       signUp,
       setLanguage,
+      setAgentLang,
       reset,
       startConversation,
       userReply,
