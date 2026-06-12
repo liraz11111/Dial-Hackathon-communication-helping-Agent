@@ -64,7 +64,7 @@ export default function AppShell() {
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden" dir={rtl ? 'rtl' : 'ltr'}>
       <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-2.5">
-        <Link to="/app/chats" className="focus-ring flex items-center gap-2.5 rounded-xl" title={t('nav.home', lang)}>
+        <Link to="/" className="focus-ring flex items-center gap-2.5 rounded-xl" title={t('nav.home', lang)}>
           <div className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-glow">
             <Icon name="phone" className="h-5 w-5" />
           </div>
