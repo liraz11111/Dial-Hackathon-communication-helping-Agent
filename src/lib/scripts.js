@@ -7,7 +7,6 @@ export const CATEGORIES = [
   { key: 'doctor', emoji: '🩺', defaultPlace: 'City Health Clinic' },
   { key: 'government', emoji: '🏛️', defaultPlace: 'City Hall' },
   { key: 'landlord', emoji: '🏠', defaultPlace: 'Landlord' },
-  { key: 'family', emoji: '👪', defaultPlace: 'Family' },
   { key: 'other', emoji: '📞', defaultPlace: 'Phone call' },
 ]
 
@@ -127,33 +126,6 @@ const SCENARIOS = {
       en: 'Landlord is sending a technician tomorrow ~3 PM for the heating.',
       es: 'El casero enviará un técnico mañana ~3 PM por la calefacción.',
       he: 'בעל הדירה שולח טכנאי מחר בסביבות 15:00 לחימום.',
-    },
-  },
-
-  family: {
-    localLang: 'en',
-    turns: [
-      {
-        en: 'Hi, this is Maria.',
-        es: 'Hola, soy María.',
-        he: 'היי, מדברת מריה.',
-      },
-      {
-        en: 'Oh that’s wonderful to hear! We’re all doing well. When are you coming to visit?',
-        es: '¡Qué bueno escucharlo! Todos estamos bien. ¿Cuándo vienes a visitarnos?',
-        he: 'איזה כיף לשמוע! כולנו בסדר. מתי אתה בא לבקר?',
-      },
-      {
-        en: 'Can’t wait to see you. Take care, talk soon!',
-        es: '¡Ya quiero verte! Cuídate, hablamos pronto.',
-        he: 'מחכים לראות אותך. שמור על עצמך, נדבר בקרוב!',
-        end: true,
-      },
-    ],
-    summary: {
-      en: 'Call finished. Everyone’s well — they want to know when you’ll visit.',
-      es: 'Llamada finalizada. Todos están bien — quieren saber cuándo los visitas.',
-      he: 'השיחה הסתיימה. כולם בסדר — הם רוצים לדעת מתי תבקר.',
     },
   },
 

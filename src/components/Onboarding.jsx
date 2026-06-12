@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Button from './ui/Button.jsx'
 import { Icon } from './ui/Icons.jsx'
@@ -13,6 +14,7 @@ const mobile = isMobile()
 
 export default function Onboarding() {
   const { actions } = useStore()
+  const navigate = useNavigate()
   const [step, setStep] = useState('form') // form | ready
   const [phone, setPhone] = useState('')
   const [language, setLanguage] = useState('es')
@@ -40,21 +42,27 @@ export default function Onboarding() {
     }
   }, [step, number, phone])
 
-  const start = () => actions.signUp({ phone, language, number, agentLang: 'en' })
+  // Creating the number lands the user straight in their chat window.
+  const start = async () => {
+    const welcomeId = await actions.signUp({ phone, language, number, agentLang: 'en' })
+    navigate(`/app/chats/${welcomeId}`)
+  }
 
-  // Phone flow: save the contact + open the SMS app + go into the chat (one tap).
-  const phoneFinish = () => {
+  // Phone flow: save the contact + go into the chat + open the SMS app (one tap).
+  const phoneFinish = async () => {
     downloadVCard('BridgeAgent', number)
-    actions.signUp({ phone, language, number, agentLang: 'en' })
+    const welcomeId = await actions.signUp({ phone, language, number, agentLang: 'en' })
+    navigate(`/app/chats/${welcomeId}`)
     window.location.href = smsHref(number, 'Hi BridgeAgent, I need help making a call.')
   }
 
   return (
     <div className="grid min-h-screen w-full place-items-center px-5 py-10" dir={rtl ? 'rtl' : 'ltr'}>
       <button
-        onClick={() => actions.goScreen('landing')}
-        className="fixed left-4 top-4 grid h-10 w-10 place-items-center rounded-xl text-white/60 hover:bg-white/5 hover:text-white"
+        onClick={() => navigate('/')}
+        className="focus-ring fixed left-4 top-4 grid h-10 w-10 place-items-center rounded-xl text-white/60 hover:bg-white/5 hover:text-white"
         dir="ltr"
+        aria-label={t('nav.home', language)}
       >
         <Icon name="back" className="h-5 w-5" />
       </button>
@@ -69,7 +77,7 @@ export default function Onboarding() {
             className="glass-strong w-full max-w-md rounded-3xl p-7 shadow-glass"
           >
             <div className="mb-6 flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-ink-900 shadow-glow">
+              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-glow">
                 <Icon name="phone" className="h-6 w-6" />
               </div>
               <div>
@@ -93,7 +101,7 @@ export default function Onboarding() {
               <LanguagePicker value={language} onChange={setLanguage} />
             </div>
 
-            <Button full size="lg" variant="primary" disabled={!valid || busy} onClick={onContinue}>
+            <Button full size="lg" variant="primary" loading={busy} disabled={!valid} onClick={onContinue}>
               {busy ? t('chat.connecting', language) : t('onb.continue', language)}
             </Button>
 
@@ -102,7 +110,7 @@ export default function Onboarding() {
               {t('onb.or', language)}
               <span className="h-px flex-1 bg-white/10" />
             </div>
-            <Button full size="md" variant="glass" onClick={onContinue} disabled={busy}>
+            <Button full size="md" variant="secondary" onClick={onContinue} disabled={busy}>
               <Icon name="google" className="h-5 w-5" />
               {t('onb.google', language)}
             </Button>
@@ -120,7 +128,7 @@ export default function Onboarding() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 200, damping: 14 }}
-              className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-3xl bg-gradient-to-br from-brand-400 to-brand-600 text-ink-900 shadow-glow"
+              className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-3xl bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-glow"
             >
               <Icon name="check" className="h-8 w-8" />
             </motion.div>
@@ -146,21 +154,15 @@ export default function Onboarding() {
                 <div className="mb-5 flex items-start gap-3 rounded-2xl border border-brand-400/30 bg-brand-500/10 p-4 text-left">
                   <Icon name="chat" className="mt-0.5 h-5 w-5 shrink-0 text-brand-300" />
                   <div className="text-sm text-brand-50/90">
-                    <p className="font-semibold">Your helper chat is ready 🎉</p>
-                    <p className="mt-0.5 text-white/70">
-                      We started a conversation with your BridgeAgent — open it and make your first call.
-                    </p>
+                    <p className="font-semibold">{t('setup.ready', language)}</p>
+                    <p className="mt-0.5 text-white/70">{t('setup.readyBody', language)}</p>
                     <p className="mt-1.5 text-xs text-white/45">
-                      {smsSent ? (
-                        <>It also texts <span dir="ltr">{phone}</span> through the live phone service, so you can use it without the app.</>
-                      ) : (
-                        <>Connecting your number…</>
-                      )}
+                      {smsSent ? t('setup.smsSent', language).replace('{phone}', phone) : t('setup.connecting', language)}
                     </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <Button variant="glass" onClick={() => downloadVCard('BridgeAgent', number)}>
+                  <Button variant="secondary" onClick={() => downloadVCard('BridgeAgent', number)}>
                     <Icon name="contact" className="h-5 w-5" />
                     {t('setup.save', language)}
                   </Button>

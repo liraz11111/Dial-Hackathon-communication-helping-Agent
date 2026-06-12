@@ -4,35 +4,43 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Deep, neutral-violet inks for surfaces.
         ink: {
-          900: '#070b18',
-          800: '#0b1020',
-          700: '#111935',
-          600: '#1a2347',
+          950: '#07070C',
+          900: '#0B0B12',
+          800: '#16161F',
+          700: '#20202C',
+          600: '#2A2A38',
         },
+        // Primary — indigo / violet.
         brand: {
-          // calming teal/indigo
-          50: '#eafaf7',
-          200: '#9fe6d8',
-          400: '#3fc8b0',
-          500: '#23b89c',
-          600: '#179b84',
+          50: '#F1EFFF',
+          200: '#C7BEFF',
+          300: '#A99BFF',
+          400: '#8E7BFF',
+          500: '#7C6CFF',
+          600: '#6A55F0',
+          700: '#5A45D6',
         },
+        // Secondary highlight — refined warm coral (used sparingly).
         accent: {
-          // warm coral
-          300: '#ffb3a0',
-          400: '#ff8f73',
-          500: '#ff7a5c',
-          600: '#f0603f',
+          200: '#FFD4C4',
+          300: '#FFB89C',
+          400: '#FF9F7A',
+          500: '#FF8A5F',
+          600: '#F06F44',
         },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'Segoe UI', 'Roboto', 'sans-serif'],
+        display: ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'Menlo', 'monospace'],
       },
       boxShadow: {
-        glow: '0 0 60px -12px rgba(35,184,156,0.55)',
-        'glow-accent': '0 0 50px -12px rgba(255,122,92,0.55)',
-        glass: '0 8px 40px -12px rgba(0,0,0,0.5)',
+        glow: '0 0 60px -14px rgba(124,108,255,0.6)',
+        'glow-accent': '0 0 48px -14px rgba(255,138,95,0.55)',
+        glass: '0 8px 40px -12px rgba(0,0,0,0.55)',
+        soft: '0 2px 12px -4px rgba(0,0,0,0.5)',
       },
       backdropBlur: {
         xs: '2px',

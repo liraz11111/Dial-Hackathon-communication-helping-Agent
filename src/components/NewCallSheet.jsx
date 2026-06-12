@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Icon } from './ui/Icons.jsx'
 import Button from './ui/Button.jsx'
@@ -6,17 +6,27 @@ import { useStore } from '../store.jsx'
 import { t } from '../lib/languages.js'
 import { CATEGORIES } from '../lib/scripts.js'
 
-export default function NewCallSheet({ open, onClose }) {
+export default function NewCallSheet({ open, onClose, onStarted, presetCategory = null }) {
   const { contacts, lang, actions } = useStore()
   const [category, setCategory] = useState('bank')
   const [number, setNumber] = useState('')
   const [contactId, setContactId] = useState('')
   const [request, setRequest] = useState('')
 
+  // Each time the sheet opens, seed the category (preset or default) and clear
+  // any leftover draft so it always opens fresh.
+  useEffect(() => {
+    if (!open) return
+    setCategory(presetCategory || 'bank')
+    setNumber('')
+    setContactId('')
+    setRequest('')
+  }, [open, presetCategory])
+
   const start = () => {
     const cat = CATEGORIES.find((c) => c.key === category)
     const contact = contacts.find((c) => c.id === contactId)
-    actions.startConversation({
+    const newId = actions.startConversation({
       category,
       place: cat?.defaultPlace,
       number: contact?.number || number,
@@ -26,7 +36,8 @@ export default function NewCallSheet({ open, onClose }) {
     setNumber('')
     setContactId('')
     setRequest('')
-    onClose()
+    if (onStarted) onStarted(newId)
+    else onClose()
   }
 
   return (
@@ -48,7 +59,7 @@ export default function NewCallSheet({ open, onClose }) {
           >
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-lg font-extrabold">{t('new.title', lang)}</h2>
-              <button onClick={onClose} className="grid h-9 w-9 place-items-center rounded-xl text-white/60 hover:bg-white/5">
+              <button onClick={onClose} className="focus-ring grid h-9 w-9 place-items-center rounded-xl text-white/60 hover:bg-white/5">
                 <Icon name="x" className="h-5 w-5" />
               </button>
             </div>
@@ -59,7 +70,7 @@ export default function NewCallSheet({ open, onClose }) {
                 <button
                   key={c.key}
                   onClick={() => setCategory(c.key)}
-                  className={`flex flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 transition ${
+                  className={`focus-ring flex flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 transition ${
                     category === c.key ? 'border-brand-400 bg-brand-500/15' : 'border-white/10 bg-white/5 hover:bg-white/10'
                   }`}
                 >
@@ -93,7 +104,7 @@ export default function NewCallSheet({ open, onClose }) {
                         setContactId(c.id === contactId ? '' : c.id)
                         setNumber('')
                       }}
-                      className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition ${
+                      className={`focus-ring flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition ${
                         contactId === c.id ? 'border-brand-400 bg-brand-500/15' : 'border-white/10 bg-white/5 hover:bg-white/10'
                       }`}
                     >

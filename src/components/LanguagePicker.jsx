@@ -3,7 +3,8 @@ import { Icon } from './ui/Icons.jsx'
 import { langMeta, searchLanguages } from '../lib/languages.js'
 
 // A searchable language scroller: type to filter, scroll, tap to choose.
-export default function LanguagePicker({ value, onChange, placeholder = 'Search language…', up = false }) {
+// `compact` renders a small pill trigger (for the header); default is full width.
+export default function LanguagePicker({ value, onChange, placeholder = 'Search language…', up = false, compact = false }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const ref = useRef(null)
@@ -27,21 +28,38 @@ export default function LanguagePicker({ value, onChange, placeholder = 'Search 
 
   return (
     <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 text-left transition hover:bg-white/10"
-      >
-        <span className="text-xl">{sel.flag}</span>
-        <span className="flex-1">
-          <span className="block text-[15px] font-semibold">{sel.native}</span>
-          <span className="block text-xs text-white/45">{sel.name}</span>
-        </span>
-        <Icon name="search" className="h-4 w-4 text-white/40" />
-      </button>
+      {compact ? (
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="focus-ring flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-sm font-semibold transition hover:bg-white/10"
+          title={sel.name}
+        >
+          <span className="text-base">{sel.flag}</span>
+          <span className="uppercase">{value}</span>
+          <Icon name="chevron" className={`h-3.5 w-3.5 text-white/40 transition ${open ? '-rotate-90' : 'rotate-90'}`} />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="focus-ring flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 text-left transition hover:bg-white/10"
+        >
+          <span className="text-xl">{sel.flag}</span>
+          <span className="flex-1">
+            <span className="block text-[15px] font-semibold">{sel.native}</span>
+            <span className="block text-xs text-white/45">{sel.name}</span>
+          </span>
+          <Icon name="search" className="h-4 w-4 text-white/40" />
+        </button>
+      )}
 
       {open && (
-        <div className={`absolute z-40 w-full overflow-hidden rounded-2xl glass-strong p-2 shadow-glass ${up ? 'bottom-full mb-2' : 'mt-2'}`}>
+        <div
+          className={`absolute z-50 overflow-hidden rounded-2xl glass-strong p-2 shadow-glass ${
+            compact ? 'end-0 w-72' : 'w-full'
+          } ${up ? 'bottom-full mb-2' : 'mt-2'}`}
+        >
           <input
             autoFocus
             value={query}
@@ -49,14 +67,14 @@ export default function LanguagePicker({ value, onChange, placeholder = 'Search 
             placeholder={placeholder}
             className="mb-1 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm outline-none focus:border-brand-400"
           />
-          <div className="max-h-56 overflow-y-auto pr-0.5">
+          <div className="max-h-64 overflow-y-auto pr-0.5">
             {results.length === 0 && <div className="px-3 py-4 text-center text-sm text-white/40">No matches</div>}
             {results.map((l) => (
               <button
                 key={l.code}
                 type="button"
                 onClick={() => choose(l.code)}
-                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${
+                className={`focus-ring flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${
                   l.code === value ? 'bg-brand-500/15' : 'hover:bg-white/5'
                 }`}
               >

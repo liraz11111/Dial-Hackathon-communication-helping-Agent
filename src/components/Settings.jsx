@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Icon } from './ui/Icons.jsx'
 import Button from './ui/Button.jsx'
@@ -18,6 +19,12 @@ function Section({ title, note, children }) {
 
 export default function Settings() {
   const { user, lang, agentLang, contacts, actions } = useStore()
+  const navigate = useNavigate()
+
+  const reset = () => {
+    actions.reset()
+    navigate('/')
+  }
 
   return (
     <div className="mx-auto h-full w-full max-w-xl overflow-y-auto px-4 py-6">
@@ -25,7 +32,7 @@ export default function Settings() {
 
       <Section title={t('set.number', lang)}>
         <div className="glass flex items-center gap-3 rounded-2xl p-3">
-          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-ink-900 shadow-glow">
+          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-glow">
             <Icon name="phone" className="h-5 w-5" />
           </div>
           <div className="flex-1">
@@ -45,7 +52,7 @@ export default function Settings() {
             <button
               key={a}
               onClick={() => actions.setAgentLang(a)}
-              className={`flex flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-3 font-semibold transition ${
+              className={`focus-ring flex flex-1 items-center justify-center gap-2 rounded-2xl border px-4 py-3 font-semibold transition ${
                 agentLang === a ? 'border-brand-400 bg-brand-500/15' : 'border-white/10 bg-white/5 hover:bg-white/10'
               }`}
             >
@@ -72,13 +79,13 @@ export default function Settings() {
       </Section>
 
       <motion.div whileTap={{ scale: 0.99 }}>
-        <Button full variant="glass" className="mb-3" onClick={() => downloadVCard('BridgeAgent', user?.number || '')}>
+        <Button full variant="secondary" className="mb-3" onClick={() => downloadVCard('BridgeAgent', user?.number || '')}>
           <Icon name="contact" className="h-5 w-5" />
           {t('set.save', lang)}
         </Button>
       </motion.div>
 
-      <Button full variant="ghost" onClick={actions.reset}>
+      <Button full variant="ghost" onClick={reset}>
         {t('set.reset', lang)}
       </Button>
     </div>

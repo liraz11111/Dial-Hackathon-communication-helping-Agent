@@ -2,7 +2,7 @@ import { RoundedBox } from '@react-three/drei'
 
 // A premium phone: titanium-ish metal frame + dark glossy glass screen that
 // mirrors the scene environment (the accent shows as glow, not a flat fill).
-export default function Phone3D({ position = [0, 0, 0], rotation = [0, 0, 0], scale = 1, accent = '#23b89c' }) {
+export default function Phone3D({ position = [0, 0, 0], rotation = [0, 0, 0], scale = 1, accent = '#7c6cff' }) {
   return (
     <group position={position} rotation={rotation} scale={scale}>
       {/* metal frame */}

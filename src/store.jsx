@@ -11,7 +11,6 @@ const uid = (p = 'id') => `${p}_${Date.now().toString(36)}_${Math.random().toStr
 const DEFAULT_CONTACTS = [
   { id: 'k1', name: 'City Health Clinic', number: '+1 (415) 555‑0190', category: 'doctor' },
   { id: 'k2', name: 'First National Bank', number: '+1 (800) 555‑2100', category: 'bank' },
-  { id: 'k3', name: 'Mom', number: '+34 612 345 678', category: 'family' },
 ]
 
 function load() {
@@ -25,11 +24,8 @@ function load() {
 export function StoreProvider({ children }) {
   const persisted = load()
   const [user, setUser] = useState(persisted?.user || null)
-  const [screen, setScreen] = useState(persisted?.user ? 'app' : 'landing')
-  const [tab, setTab] = useState('chats')
   const [conversations, setConversations] = useState(persisted?.conversations || [])
   const [contacts, setContacts] = useState(persisted?.contacts || DEFAULT_CONTACTS)
-  const [activeId, setActiveId] = useState(null)
 
   const convosRef = useRef(conversations)
   convosRef.current = conversations
@@ -57,13 +53,18 @@ export function StoreProvider({ children }) {
     [updateConv],
   )
 
-  const goScreen = useCallback((s) => setScreen(s), [])
-
+  // Create the user, the helper number, and the first welcome conversation.
+  // Returns the welcome conversation id so the caller can navigate straight into it.
   const signUp = useCallback(async ({ phone, language, number, agentLang: a }) => {
     const finalNumber = number || (await provisionNumber())
     setUser({ phone, language, number: finalNumber, name: 'BridgeAgent', agentLang: a || 'en' })
+
+    const existing = convosRef.current
+    if (existing.length) return existing[0].id
+
+    const welcomeId = uid('c')
     const welcome = {
-      id: uid('c'),
+      id: welcomeId,
       category: 'other',
       title: 'BridgeAgent',
       emoji: '✨',
@@ -75,6 +76,7 @@ export function StoreProvider({ children }) {
       turnIndex: 0,
       awaitingUser: false,
       relaying: false,
+      archived: false,
       createdAt: Date.now(),
       messages: [
         {
@@ -86,10 +88,8 @@ export function StoreProvider({ children }) {
         },
       ],
     }
-    setConversations((prev) => (prev.length ? prev : [welcome]))
-    setActiveId(null)
-    setTab('chats')
-    setScreen('app')
+    setConversations([welcome])
+    return welcomeId
   }, [])
 
   const setLanguage = useCallback((language) => setUser((u) => (u ? { ...u, language } : u)), [])
@@ -103,17 +103,21 @@ export function StoreProvider({ children }) {
     setUser(null)
     setConversations([])
     setContacts(DEFAULT_CONTACTS)
-    setActiveId(null)
-    setTab('chats')
-    setScreen('landing')
   }, [])
-
-  const openConversation = useCallback((id) => setActiveId(id), [])
-  const closeConversation = useCallback(() => setActiveId(null), [])
 
   const addContact = useCallback((contact) => {
     setContacts((prev) => [{ id: uid('k'), ...contact }, ...prev])
   }, [])
+
+  // Archive / restore — the relationship between live Chats and the Archive view.
+  const archiveConversation = useCallback(
+    (id) => updateConv(id, (c) => ({ ...c, archived: true })),
+    [updateConv],
+  )
+  const unarchiveConversation = useCallback(
+    (id) => updateConv(id, (c) => ({ ...c, archived: false })),
+    [updateConv],
+  )
 
   // Deliver the other party's next line: spoken in agentLang, translated to userLang.
   const deliverTurn = useCallback(
@@ -145,6 +149,7 @@ export function StoreProvider({ children }) {
     [updateConv, addMessage],
   )
 
+  // Start a new call. Returns the new conversation id so the caller can open it.
   const startConversation = useCallback(
     ({ category, place, number, contactName, request }) => {
       const cat = CATEGORIES.find((c) => c.key === category) || CATEGORIES.find((c) => c.key === 'other')
@@ -169,12 +174,11 @@ export function StoreProvider({ children }) {
         turnIndex: 0,
         awaitingUser: false,
         relaying: false,
+        archived: false,
         createdAt: Date.now(),
         messages,
       }
       setConversations((prev) => [conv, ...prev])
-      setActiveId(id)
-      setTab('chats')
 
       setTimeout(() => {
         updateConv(id, (c) => ({ ...c, status: 'live' }))
@@ -202,23 +206,18 @@ export function StoreProvider({ children }) {
     user,
     lang: userLang,
     agentLang,
-    screen,
-    tab,
     conversations,
     contacts,
-    activeId,
     actions: {
-      goScreen,
-      setTab,
       signUp,
       setLanguage,
       setAgentLang,
       reset,
       startConversation,
       userReply,
-      openConversation,
-      closeConversation,
       addContact,
+      archiveConversation,
+      unarchiveConversation,
     },
   }
 

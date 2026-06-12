@@ -1,29 +1,32 @@
+import { Link, NavLink, Outlet, useMatch } from 'react-router-dom'
 import { Icon } from './ui/Icons.jsx'
-import Chat from './Chat.jsx'
-import History from './History.jsx'
-import Settings from './Settings.jsx'
 import { useStore } from '../store.jsx'
 import { t, isRTL, AGENT_LANGS, langMeta } from '../lib/languages.js'
 
 const TABS = [
-  { key: 'chats', icon: 'chat' },
-  { key: 'history', icon: 'history' },
-  { key: 'settings', icon: 'settings' },
+  { key: 'chats', to: '/app/chats', icon: 'chat' },
+  { key: 'archive', to: '/app/archive', icon: 'archive' },
+  { key: 'settings', to: '/app/settings', icon: 'settings' },
 ]
 
-function NavButton({ tab, active, onClick, lang, layout }) {
+function NavButton({ tab, lang, layout }) {
+  // "chats" stays active on /app/chats/:id too; others match exactly.
+  const matchEnd = tab.key !== 'chats'
   return (
-    <button
-      onClick={onClick}
-      className={`flex items-center justify-center gap-1 transition ${
-        layout === 'side'
-          ? `w-full flex-col rounded-2xl py-3 ${active ? 'bg-white/10 text-brand-200' : 'text-white/55 hover:text-white'}`
-          : `flex-1 flex-col py-2.5 ${active ? 'text-brand-300' : 'text-white/55'}`
-      }`}
+    <NavLink
+      to={tab.to}
+      end={matchEnd}
+      className={({ isActive }) =>
+        `focus-ring flex items-center justify-center gap-1 transition ${
+          layout === 'side'
+            ? `w-full flex-col rounded-2xl py-3 ${isActive ? 'bg-white/10 text-brand-200' : 'text-white/55 hover:text-white'}`
+            : `flex-1 flex-col py-2.5 ${isActive ? 'text-brand-300' : 'text-white/55'}`
+        }`
+      }
     >
       <Icon name={tab.icon} className="h-6 w-6" />
       <span className="text-[11px] font-semibold">{t(`nav.${tab.key}`, lang)}</span>
-    </button>
+    </NavLink>
   )
 }
 
@@ -37,7 +40,7 @@ function AgentLangToggle({ agentLang, onChange }) {
             key={a}
             onClick={() => onChange(a)}
             title={langMeta(a).native}
-            className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold transition ${
+            className={`focus-ring flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold transition ${
               agentLang === a ? 'bg-brand-500/30 text-white' : 'text-white/50 hover:text-white'
             }`}
           >
@@ -51,39 +54,40 @@ function AgentLangToggle({ agentLang, onChange }) {
 }
 
 export default function AppShell() {
-  const { user, tab, activeId, lang, agentLang, actions } = useStore()
+  const { lang, agentLang, actions } = useStore()
+  // useParams() can't see a child route's :id from this parent-route element,
+  // so match the URL directly. On mobile, an open thread takes the full screen.
+  const onThread = useMatch('/app/chats/:id')
   const rtl = isRTL(lang)
-  const hideBottom = tab === 'chats' && activeId
+  const hideBottom = !!onThread
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden" dir={rtl ? 'rtl' : 'ltr'}>
       <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-2.5">
-        <div className="flex items-center gap-2.5">
-          <div className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 text-ink-900 shadow-glow">
+        <Link to="/app/chats" className="focus-ring flex items-center gap-2.5 rounded-xl" title={t('nav.home', lang)}>
+          <div className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-glow">
             <Icon name="phone" className="h-5 w-5" />
           </div>
           <span className="text-base font-extrabold tracking-tight">{t('app.name')}</span>
-        </div>
+        </Link>
         <AgentLangToggle agentLang={agentLang} onChange={actions.setAgentLang} />
       </header>
 
       <div className="flex min-h-0 flex-1">
         <nav className="hidden w-[84px] shrink-0 flex-col gap-1.5 border-e border-white/10 p-2 lg:flex">
           {TABS.map((tb) => (
-            <NavButton key={tb.key} tab={tb} lang={lang} layout="side" active={tab === tb.key} onClick={() => actions.setTab(tb.key)} />
+            <NavButton key={tb.key} tab={tb} lang={lang} layout="side" />
           ))}
         </nav>
 
         <main className="min-h-0 flex-1">
-          {tab === 'chats' && <Chat />}
-          {tab === 'history' && <History />}
-          {tab === 'settings' && <Settings />}
+          <Outlet />
         </main>
       </div>
 
       <nav className={`${hideBottom ? 'hidden' : 'flex'} shrink-0 border-t border-white/10 glass-strong lg:hidden`}>
         {TABS.map((tb) => (
-          <NavButton key={tb.key} tab={tb} lang={lang} layout="bottom" active={tab === tb.key} onClick={() => actions.setTab(tb.key)} />
+          <NavButton key={tb.key} tab={tb} lang={lang} layout="bottom" />
         ))}
       </nav>
     </div>

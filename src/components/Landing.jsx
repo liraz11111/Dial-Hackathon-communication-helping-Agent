@@ -1,17 +1,22 @@
 import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import TranslationBridge from './TranslationBridge.jsx'
+import ScenarioShowcase from './ScenarioShowcase.jsx'
+import LanguagePicker from './LanguagePicker.jsx'
 import Button from './ui/Button.jsx'
 import { Icon } from './ui/Icons.jsx'
 import { useStore } from '../store.jsx'
 import { t, isRTL } from '../lib/languages.js'
 
-const LANDING_LANGS = ['en', 'es', 'he']
-
 export default function Landing() {
-  const { actions } = useStore()
-  const [lang, setLang] = useState('en')
+  const { user } = useStore()
+  const navigate = useNavigate()
+  const [lang, setLang] = useState(user?.language || 'en')
   const rtl = isRTL(lang)
+
+  const goCta = () => navigate(user ? '/app/chats' : '/onboarding')
+  const ctaLabel = user ? t('landing.openApp', lang) : t('landing.cta', lang)
 
   const features = [
     { key: 'f1', icon: 'chat' },
@@ -22,35 +27,46 @@ export default function Landing() {
   return (
     <div className="min-h-screen w-full overflow-x-hidden" dir={rtl ? 'rtl' : 'ltr'}>
       <header className="relative z-20 mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8">
-        <div className="flex items-center gap-2.5">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 text-ink-900 shadow-glow">
+        <Link to="/" className="focus-ring flex items-center gap-2.5 rounded-xl" onClick={() => window.scrollTo({ top: 0 })}>
+          <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-glow">
             <Icon name="phone" className="h-5 w-5" />
           </div>
           <span className="text-lg font-extrabold tracking-tight">{t('app.name')}</span>
-        </div>
+        </Link>
         <div className="flex items-center gap-2">
-          <div className="hidden items-center gap-1 sm:flex">
-            {LANDING_LANGS.map((l) => (
-              <button
-                key={l}
-                onClick={() => setLang(l)}
-                className={`rounded-lg px-2.5 py-1.5 text-sm font-semibold transition ${
-                  lang === l ? 'bg-white/15 text-white' : 'text-white/55 hover:text-white'
-                }`}
-              >
-                {l.toUpperCase()}
-              </button>
-            ))}
-          </div>
-          <Button size="sm" variant="primary" onClick={() => actions.goScreen('onboarding')}>
-            {t('landing.cta', lang)}
+          <LanguagePicker value={lang} onChange={setLang} compact />
+          <Button size="sm" variant="primary" onClick={goCta}>
+            {ctaLabel}
           </Button>
         </div>
       </header>
 
       <main className="mx-auto max-w-7xl px-4 sm:px-8">
-        {/* hero: the Living Translation Bridge */}
-        <TranslationBridge />
+        {/* hero: ambient translation bridge backdrop + scenario showcase */}
+        <section className="relative mx-auto h-[600px] w-full max-w-6xl overflow-hidden">
+          <TranslationBridge />
+          {/* readability veil */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-ink-900/30 via-transparent to-ink-900/70" />
+
+          <div className="relative z-10 flex h-full flex-col items-center justify-center px-4 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="flex flex-col items-center"
+            >
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full glass px-3.5 py-1.5 text-xs font-semibold text-brand-200">
+                <Icon name="globe" className="h-4 w-4" />
+                {t('landing.kicker', lang)}
+              </div>
+              <h1 className="mx-auto max-w-3xl whitespace-pre-line text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl">
+                <span className="text-gradient">{t('landing.title', lang)}</span>
+              </h1>
+            </motion.div>
+
+            <ScenarioShowcase lang={lang} variant="hero" className="mt-8" />
+          </div>
+        </section>
 
         {/* value prop + CTA */}
         <section className="py-14 text-center">
@@ -60,20 +76,13 @@ export default function Landing() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full glass px-3.5 py-1.5 text-xs font-semibold text-brand-200">
-              <Icon name="globe" className="h-4 w-4" />
-              {t('landing.kicker', lang)}
-            </div>
-            <h1 className="mx-auto max-w-3xl whitespace-pre-line text-4xl font-extrabold leading-[1.08] tracking-tight sm:text-5xl">
-              <span className="text-gradient">{t('landing.title', lang)}</span>
-            </h1>
-            <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-white/65 sm:text-lg">
+            <p className="mx-auto max-w-2xl text-base leading-relaxed text-white/65 sm:text-lg">
               {t('landing.sub', lang)}
             </p>
             <div className="mt-7 flex justify-center">
-              <Button size="lg" variant="primary" onClick={() => actions.goScreen('onboarding')}>
+              <Button size="lg" variant="primary" onClick={goCta}>
                 <Icon name="phone" className="h-5 w-5" />
-                {t('landing.cta', lang)}
+                {ctaLabel}
               </Button>
             </div>
           </motion.div>
